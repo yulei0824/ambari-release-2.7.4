@@ -74,28 +74,20 @@ public class KerberosKeytabPrincipalDAO {
    * @param kerberosPrincipalEntity      {@link KerberosPrincipalEntity} which related to this principal
    * @return evaluated entity
    */
-  public KeytabPrincipalFindOrCreateResult findOrCreate(KerberosKeytabEntity kerberosKeytabEntity, HostEntity hostEntity, KerberosPrincipalEntity kerberosPrincipalEntity) {
-    KeytabPrincipalFindOrCreateResult result = new KeytabPrincipalFindOrCreateResult();
-    result.created = false;
-
+  public KerberosKeytabPrincipalEntity findOrCreate(KerberosKeytabEntity kerberosKeytabEntity, HostEntity hostEntity, KerberosPrincipalEntity kerberosPrincipalEntity) {
     Long hostId = hostEntity == null ? null : hostEntity.getHostId();
     KerberosKeytabPrincipalEntity kkp = findByNaturalKey(hostId, kerberosKeytabEntity.getKeytabPath(), kerberosPrincipalEntity.getPrincipalName());
     if (kkp == null) {
-      result.created = true;
-
       kkp = new KerberosKeytabPrincipalEntity(
           kerberosKeytabEntity,
           hostEntity,
           kerberosPrincipalEntity
       );
       create(kkp);
-
       kerberosKeytabEntity.addKerberosKeytabPrincipal(kkp);
       kerberosPrincipalEntity.addKerberosKeytabPrincipal(kkp);
     }
-
-    result.kkp = kkp;
-    return result;
+    return kkp;
   }
 
   @Transactional
@@ -352,15 +344,5 @@ public class KerberosKeytabPrincipalDAO {
           componentNames,
           principalNames);
     }
-  }
-
-  /**
-   * Used to return a keytab principal and whether or not it was created. This
-   * is required so that callers know whether associated keytabs and principals
-   * need bi-direcitonal merges.
-   */
-  public static class KeytabPrincipalFindOrCreateResult {
-    public KerberosKeytabPrincipalEntity kkp;
-    public boolean created;
   }
 }

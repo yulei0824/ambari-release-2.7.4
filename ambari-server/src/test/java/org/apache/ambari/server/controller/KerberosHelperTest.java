@@ -83,7 +83,6 @@ import org.apache.ambari.server.orm.DBAccessor;
 import org.apache.ambari.server.orm.dao.ArtifactDAO;
 import org.apache.ambari.server.orm.dao.HostRoleCommandDAO;
 import org.apache.ambari.server.orm.dao.KerberosKeytabPrincipalDAO;
-import org.apache.ambari.server.orm.dao.KerberosKeytabPrincipalDAO.KeytabPrincipalFindOrCreateResult;
 import org.apache.ambari.server.orm.dao.KerberosPrincipalDAO;
 import org.apache.ambari.server.orm.entities.KerberosKeytabPrincipalEntity;
 import org.apache.ambari.server.scheduler.ExecutionScheduler;
@@ -3429,12 +3428,7 @@ public class KerberosHelperTest extends EasyMockSupport {
   private void testCreateTestIdentity(final PrincipalKeyCredential PrincipalKeyCredential, Boolean manageIdentities) throws Exception {
     KerberosHelper kerberosHelper = injector.getInstance(KerberosHelper.class);
     KerberosKeytabPrincipalDAO kerberosKeytabPrincipalDAO = injector.getInstance(KerberosKeytabPrincipalDAO.class);
-    KerberosKeytabPrincipalEntity kkp = createNiceMock(KerberosKeytabPrincipalEntity.class);
-    KeytabPrincipalFindOrCreateResult result = new KeytabPrincipalFindOrCreateResult();
-    result.created = true;
-    result.kkp = kkp;
-
-    expect(kerberosKeytabPrincipalDAO.findOrCreate(anyObject(), anyObject(), anyObject())).andReturn(result).anyTimes();
+    expect(kerberosKeytabPrincipalDAO.findOrCreate(anyObject(), anyObject(), anyObject())).andReturn(createNiceMock(KerberosKeytabPrincipalEntity.class)).anyTimes();
     boolean managingIdentities = !Boolean.FALSE.equals(manageIdentities);
 
     final Map<String, String> kerberosEnvProperties = new HashMap<>();
@@ -3625,12 +3619,7 @@ public class KerberosHelperTest extends EasyMockSupport {
   private void testDeleteTestIdentity(final PrincipalKeyCredential PrincipalKeyCredential) throws Exception {
     KerberosHelper kerberosHelper = injector.getInstance(KerberosHelper.class);
     KerberosKeytabPrincipalDAO kerberosKeytabPrincipalDAO = injector.getInstance(KerberosKeytabPrincipalDAO.class);
-    KerberosKeytabPrincipalEntity kkp = createNiceMock(KerberosKeytabPrincipalEntity.class);
-    KeytabPrincipalFindOrCreateResult result = new KeytabPrincipalFindOrCreateResult();
-    result.created = true;
-    result.kkp = kkp;
-
-    expect(kerberosKeytabPrincipalDAO.findOrCreate(anyObject(), anyObject(), anyObject())).andReturn(result).anyTimes();
+    expect(kerberosKeytabPrincipalDAO.findOrCreate(anyObject(), anyObject(), anyObject())).andReturn(createNiceMock(KerberosKeytabPrincipalEntity.class)).anyTimes();
     Host host1 = createMock(Host.class);
     expect(host1.getHostId()).andReturn(1l).anyTimes();
 
@@ -4061,8 +4050,7 @@ public class KerberosHelperTest extends EasyMockSupport {
     injector.getInstance(AmbariMetaInfo.class).init();
 
     Map<String, Collection<KerberosIdentityDescriptor>> identities;
-    identities = kerberosHelper.getActiveIdentities(clusterName, hostName, serviceName,
-        componentName, replaceHostNames, null, null);
+    identities = kerberosHelper.getActiveIdentities(clusterName, hostName, serviceName, componentName, replaceHostNames);
 
     verifyAll();
 

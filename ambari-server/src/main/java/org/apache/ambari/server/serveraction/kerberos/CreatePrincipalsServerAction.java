@@ -23,7 +23,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.ConcurrentMap;
-import java.util.concurrent.locks.Lock;
 
 import org.apache.ambari.server.AmbariException;
 import org.apache.ambari.server.actionmanager.HostRoleStatus;
@@ -40,7 +39,6 @@ import org.apache.commons.lang.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.util.concurrent.Striped;
 import com.google.inject.Inject;
 
 /**
@@ -69,11 +67,6 @@ public class CreatePrincipalsServerAction extends KerberosServerAction {
   @Inject
   private KerberosKeytabPrincipalDAO kerberosKeytabPrincipalDAO;
 
-  /**
-   * Used to prevent multiple threads from working with the same principal.
-   */
-  private Striped<Lock> locksByPrincipal = Striped.lazyWeakLock(25);
-  
   /**
    * A set of visited principal names used to prevent unnecessary processing on already processed
    * principal names
@@ -168,40 +161,32 @@ public class CreatePrincipalsServerAction extends KerberosServerAction {
       if (processPrincipal) {
         Map<String, String> principalPasswordMap = getPrincipalPasswordMap(requestSharedDataContext);
 
-        String principal = resolvedPrincipal.getPrincipal();
-        Lock lock = locksByPrincipal.get(principal);
-        lock.lock();
-        
-        String password = principalPasswordMap.get(principal);
+        String password = principalPasswordMap.get(resolvedPrincipal.getPrincipal());
 
-        try {
-          if (password == null) {
-            CreatePrincipalResult result = createPrincipal(resolvedPrincipal.getPrincipal(), servicePrincipal, kerberosConfiguration, operationHandler, regenerateKeytabs, actionLog);
-            if (result == null) {
-              commandReport = createCommandReport(1, HostRoleStatus.FAILED, "{}", actionLog.getStdOut(), actionLog.getStdErr());
-            } else {
-              Map<String, Integer> principalKeyNumberMap = getPrincipalKeyNumberMap(requestSharedDataContext);
-  
-              principalPasswordMap.put(resolvedPrincipal.getPrincipal(), result.getPassword());
-              principalKeyNumberMap.put(resolvedPrincipal.getPrincipal(), result.getKeyNumber());
-              // invalidate given principal for all keytabs to make them redistributed again
-              for (KerberosKeytabPrincipalEntity kkpe: kerberosKeytabPrincipalDAO.findByPrincipal(resolvedPrincipal.getPrincipal())) {
-                kkpe.setDistributed(false);
-                kerberosKeytabPrincipalDAO.merge(kkpe);
-              }
-              // invalidate principal cache
-              KerberosPrincipalEntity principalEntity = kerberosPrincipalDAO.find(resolvedPrincipal.getPrincipal());
-              try {
-                new File(principalEntity.getCachedKeytabPath()).delete();
-              } catch (Exception e) {
-                LOG.debug("Failed to delete cache file '{}'", principalEntity.getCachedKeytabPath());
-              }
-              principalEntity.setCachedKeytabPath(null);
-              kerberosPrincipalDAO.merge(principalEntity);
+        if (password == null) {
+          CreatePrincipalResult result = createPrincipal(resolvedPrincipal.getPrincipal(), servicePrincipal, kerberosConfiguration, operationHandler, regenerateKeytabs, actionLog);
+          if (result == null) {
+            commandReport = createCommandReport(1, HostRoleStatus.FAILED, "{}", actionLog.getStdOut(), actionLog.getStdErr());
+          } else {
+            Map<String, Integer> principalKeyNumberMap = getPrincipalKeyNumberMap(requestSharedDataContext);
+
+            principalPasswordMap.put(resolvedPrincipal.getPrincipal(), result.getPassword());
+            principalKeyNumberMap.put(resolvedPrincipal.getPrincipal(), result.getKeyNumber());
+            // invalidate given principal for all keytabs to make them redistributed again
+            for (KerberosKeytabPrincipalEntity kkpe: kerberosKeytabPrincipalDAO.findByPrincipal(resolvedPrincipal.getPrincipal())) {
+              kkpe.setDistributed(false);
+              kerberosKeytabPrincipalDAO.merge(kkpe);
             }
+            // invalidate principal cache
+            KerberosPrincipalEntity principalEntity = kerberosPrincipalDAO.find(resolvedPrincipal.getPrincipal());
+            try {
+              new File(principalEntity.getCachedKeytabPath()).delete();
+            } catch (Exception e) {
+              LOG.debug("Failed to delete cache file '{}'", principalEntity.getCachedKeytabPath());
+            }
+            principalEntity.setCachedKeytabPath(null);
+            kerberosPrincipalDAO.merge(principalEntity);
           }
-        } finally {
-          lock.unlock();
         }
       }
     }

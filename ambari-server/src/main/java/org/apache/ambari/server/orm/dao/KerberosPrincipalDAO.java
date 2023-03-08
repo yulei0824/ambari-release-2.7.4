@@ -69,10 +69,8 @@ public class KerberosPrincipalDAO {
    * @param service       a boolean value declaring whether the principal represents a service (true) or not )false).
    */
   @Transactional
-  public KerberosPrincipalEntity create(String principalName, boolean service) {
-    KerberosPrincipalEntity kpe = new KerberosPrincipalEntity(principalName, service, null);
-    create(kpe);
-    return kpe;
+  public void create(String principalName, boolean service) {
+    create(new KerberosPrincipalEntity(principalName, service, null));
   }
 
   /**

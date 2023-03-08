@@ -43,14 +43,10 @@ import org.apache.ambari.server.orm.dao.KerberosKeytabPrincipalDAO;
 import org.apache.ambari.server.orm.dao.KerberosPrincipalDAO;
 import org.apache.ambari.server.orm.entities.HostEntity;
 import org.apache.ambari.server.orm.entities.KerberosKeytabPrincipalEntity;
-import org.apache.ambari.server.state.Cluster;
-import org.apache.ambari.server.state.Clusters;
-import org.apache.ambari.server.state.kerberos.KerberosDescriptor;
 import org.apache.ambari.server.state.kerberos.KerberosIdentityDescriptor;
 import org.apache.ambari.server.state.kerberos.KerberosKeytabDescriptor;
 import org.apache.ambari.server.state.kerberos.KerberosPrincipalDescriptor;
 import org.apache.ambari.server.state.kerberos.KerberosPrincipalType;
-import org.easymock.EasyMock;
 import org.easymock.EasyMockSupport;
 import org.junit.Assert;
 import org.junit.Test;
@@ -135,12 +131,8 @@ public class HostKerberosIdentityResourceProviderTest extends EasyMockSupport {
 
   @Test
   public void testGetResources() throws Exception {
-    Clusters clusters = createNiceMock(Clusters.class);
-    expect(clusters.getCluster(EasyMock.anyString())).andReturn(
-        createNiceMock(Cluster.class)).once();
 
     AmbariManagementController managementController = createMock(AmbariManagementController.class);
-    expect(managementController.getClusters()).andReturn(clusters).atLeastOnce();
 
     KerberosPrincipalDescriptor principalDescriptor1 = createStrictMock(KerberosPrincipalDescriptor.class);
     expect(principalDescriptor1.getValue()).andReturn("principal1@EXAMPLE.COM");
@@ -222,15 +214,9 @@ public class HostKerberosIdentityResourceProviderTest extends EasyMockSupport {
     activeIdentities.put("Host100", identities);
 
     KerberosHelper kerberosHelper = createStrictMock(KerberosHelper.class);
-    KerberosDescriptor kerberosDescriptor = createNiceMock(KerberosDescriptor.class);
-    expect(kerberosHelper.getKerberosDescriptor(
-        EasyMock.anyObject(Cluster.class),
-        EasyMock.eq(false))).andReturn(kerberosDescriptor).atLeastOnce();
-
-    expect(kerberosHelper.getActiveIdentities("Cluster100", "Host100", null, null, true, null,
-        kerberosDescriptor))
+    expect(kerberosHelper.getActiveIdentities("Cluster100", "Host100", null, null, true))
         .andReturn(activeIdentities)
-        .once();
+        .times(1);
 
     // replay
     replayAll();
