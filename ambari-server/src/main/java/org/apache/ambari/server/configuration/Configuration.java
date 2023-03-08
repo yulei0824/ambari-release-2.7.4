@@ -2616,6 +2616,13 @@ public class Configuration {
   public static final ConfigurationProperty<Integer> KERBEROS_SERVER_ACTION_FINALIZE_SECONDS = new ConfigurationProperty<>(
     "server.kerberos.finalize.timeout", 600);
 
+  /**
+   * The number of threads to use when executing server-side Kerberos commands, such as generate keytabs.
+   */
+  @Markdown(description = "The number of threads to use when executing server-side Kerberos commands, such as generate keytabs.")
+  public static final ConfigurationProperty<Integer> KERBEROS_SERVER_ACTION_THREADPOOL_SIZE = new ConfigurationProperty<>(
+    "server.kerberos.action.threadpool.size", 1);
+
   private static final Logger LOG = LoggerFactory.getLogger(
     Configuration.class);
 
@@ -3005,7 +3012,7 @@ public class Configuration {
   /**
    * Writes the given properties into the configuration file
    *
-   * @param propertiesToWrite
+   * @param propertiesToStore
    *          the properties to be stored
    * @param append
    *          if {@code true} the given properties will be added at the end of the
@@ -3028,7 +3035,7 @@ public class Configuration {
   /**
    * Removing the given properties from ambari.properties (i.e. at upgrade time)
    *
-   * @param propertiesToBeCleared
+   * @param propertiesToBeRemoved
    *          the properties to be removed
    * @throws AmbariException
    *           if there was any issue when clearing ambari.properties
@@ -3041,7 +3048,7 @@ public class Configuration {
     writeConfigFile(existingProperties, false);
 
     // reloading properties
-    this.properties = readConfigFile();
+    properties = readConfigFile();
   }
 
   /**
@@ -5566,6 +5573,16 @@ public class Configuration {
    */
   public int getDefaultMaxParallelismForUpgrades() {
     return Integer.parseInt(getProperty(DEFAULT_MAX_DEGREE_OF_PARALLELISM_FOR_UPGRADES));
+  }
+
+  /**
+   * Gets the number of threads to use when executing server-side Kerberos
+   * commands, such as generate keytabs.
+   *
+   * @return the threadpool size, defaulting to 1
+   */
+  public int getKerberosServerActionThreadpoolSize() {
+    return Integer.parseInt(getProperty(KERBEROS_SERVER_ACTION_THREADPOOL_SIZE));
   }
 
   /**
